@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Portfolio</title>
+    <!-- Use Tailwind CSS for rapid styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use a monospace font for a coding feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Define custom colors and fonts */
+        :root {
+            --primary-bg: #030407;
+            --secondary-bg: #090e11;
+            --text-color: #00ff41; /* Neo Green */
+            --accent-color: #9b59b6; /* Purple for highlights */
+            --border-color: #212529;
+            --glow-color: #00ff41;
+        }
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--primary-bg);
+            color: #d1d1d1;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        /* Style the animated background canvas */
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        /* Make content scrollable over the fixed background */
+        .content-container {
+            position: relative;
+            z-index: 1;
+        }
+        /* Custom scrollbar for a digital feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--primary-bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Glitch text animation */
+        .glitch {
+            position: relative;
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            text-shadow: 2px 2px var(--accent-color);
+            clip-path: inset(0 0 100% 0);
+            transform: translate(0);
+        }
+        .glitch::after {
+            text-shadow: -2px -2px var(--text-color);
+        }
+        .glitch:hover::before {
+            animation: glitch-anim-1 1s infinite alternate;
+        }
+        .glitch:hover::after {
+            animation: glitch-anim-2 1s infinite alternate;
+        }
+
+        @keyframes glitch-anim-1 {
+            0%, 100% { clip-path: inset(10% 0 90% 0); transform: translate(5px, 0); }
+            50% { clip-path: inset(60% 0 40% 0); transform: translate(-5px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0%, 100% { clip-path: inset(20% 0 80% 0); transform: translate(-3px, 0); }
+            50% { clip-path: inset(70% 0 30% 0); transform: translate(3px, 0); }
+        }
+
+        /* Digital border animation for sections */
+        .digital-border {
+            position: relative;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+            overflow: hidden;
+            animation: pulse-glow 3s infinite alternate;
+        }
+        .digital-border::before, .digital-border::after {
+            content: '';
+            position: absolute;
+            background: var(--text-color);
+            box-shadow: 0 0 5px var(--text-color);
+            animation: line-scan 4s infinite linear;
+        }
+        .digital-border::before {
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 2px;
+            transform: translateY(-100%);
+        }
+        .digital-border::after {
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 2px;
+            transform: translateX(100%);
+            animation: line-scan-2 4s infinite linear;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.2); }
+            100% { box-shadow: 0 0 15px rgba(0, 255, 65, 0.6); }
+        }
+        @keyframes line-scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        @keyframes line-scan-2 {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Canvas for the animated code rain background -->
+    <canvas id="background-canvas"></canvas>
+
+    <!-- Password Protection Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-primary-bg flex flex-col items-center justify-center text-center z-50 transition-opacity duration-500">
+        <div class="p-8 rounded-xl bg-secondary-bg/50 backdrop-blur-sm digital-border max-w-sm mx-auto">
+            <h2 class="text-3xl font-bold mb-4 text-text-color glitch" data-text="ACCESS DENIED">ACCESS DENIED</h2>
+            <p class="text-gray-400 mb-6">Enter access code to proceed.</p>
+            <input id="password-input" type="password" placeholder="Enter password" class="w-full p-3 rounded-lg bg-primary-bg text-text-color placeholder-gray-600 border border-border-color focus:outline-none focus:ring-2 focus:ring-accent-color transition-colors mb-4">
+            <button id="submit-btn" class="w-full bg-accent-color text-primary-bg font-bold py-3 rounded-lg transition-colors hover:bg-text-color focus:outline-none focus:ring-2 focus:ring-text-color">
+                Authorize
+            </button>
+            <p id="error-message" class="text-red-500 mt-4 hidden">Invalid access code. Retrying...</p>
+        </div>
+    </div>
+
+    <!-- Main content container - initially hidden -->
+    <div id="main-content" class="content-container p-4 md:p-8 lg:p-12 hidden">
+        
+        <!-- Header & Navigation -->
+        <header class="sticky top-0 z-50 backdrop-blur-sm bg-secondary-bg/70 rounded-xl p-4 md:p-6 lg:p-8 border border-border-color shadow-lg mb-8">
+            <nav class="flex justify-between items-center max-w-7xl mx-auto">
+                <a href="#hero" class="text-xl md:text-2xl font-bold text-text-color glitch" data-text="CYBER-PORTFOLIO">CYBER-PORTFOLIO</a>
+                <div class="space-x-4 text-sm md:text-base">
+                    <a href="#about" class="hover:text-text-color transition-colors glitch" data-text="About">About</a>
+                    <a href="#projects" class="hover:text-text-color transition-colors glitch" data-text="Projects">Projects</a>
+                    <a href="#contact" class="hover:text-text-color transition-colors glitch" data-text="Contact">Contact</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="max-w-7xl mx-auto space-y-16">
+            <!-- Hero Section -->
+            <section id="hero" class="flex flex-col items-center justify-center text-center py-20 md:py-32 min-h-screen">
+                <h1 class="text-3xl md:text-5xl lg:text-7xl font-bold mb-4 text-text-color glitch" data-text="JOHN DOE">JOHN DOE</h1>
+                <p class="text-lg md:text-2xl text-accent-color mb-8">// SOFTWARE ENGINEER // </p>
+                <div class="text-sm md:text-base max-w-3xl rounded-xl p-6 md:p-8 bg-secondary-bg/50 backdrop-blur-sm digital-border">
+                    <p class="mb-4">
+                        > `System.out.println("Building the future, one line of code at a time.");`
+                    </p>
+                    <p>
+                        Specializing in building robust and scalable web applications with a passion for clean code and intuitive user experiences.
+                    </p>
+                </div>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="py-16">
+                <div class="bg-secondary-bg rounded-xl p-8 shadow-lg digital-border">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-6 text-text-color glitch" data-text="About Me">About Me</h2>
+                    <p class="mb-4">
+                        Greetings, digital entity. My name is John Doe, and I am a software engineer with over 5 years of experience in the digital realm. My journey began with a fascination for how machines could bring ideas to life, and I've been coding ever since. I'm proficient in JavaScript, React, and Node.js, and I'm always eager to learn new technologies.
+                    </p>
+                    <p>
+                        In my free time, I enjoy exploring new programming languages, contributing to open-source projects, and dabbling in generative art. I believe that technology, when used creatively, has the power to solve complex problems and connect people across the globe.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section id="projects" class="py-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-8 text-text-color glitch text-center" data-text="Projects">Projects</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Project Card 1 -->
+                    <div class="bg-secondary-bg rounded-xl p-6 shadow-lg digital-border transition-transform transform hover:scale-105">
+                        <h3 class="text-xl font-bold mb-2">Project: Aurora OS</h3>
+                        <p class="text-sm text-gray-400 mb-4">A futuristic operating system UI concept built with React.</p>
+                        <p class="text-sm mb-4">A full-stack application for managing interstellar data logs. The front-end is built with React and Redux, while the back-end uses Node.js and a secure, blockchain-based database.</p>
+                        <a href="#" class="inline-block text-accent-color hover:underline text-sm">View Project &rarr;</a>
+                    </div>
+                    <!-- Project Card 2 -->
+                    <div class="bg-secondary-bg rounded-xl p-6 shadow-lg digital-border transition-transform transform hover:scale-105">
+                        <h3 class="text-xl font-bold mb-2">Project: Quantum Leap</h3>
+                        <p class="text-sm text-gray-400 mb-4">A time-travel simulation game built with Three.js and Babylon.js.</p>
+                        <p class="text-sm mb-4">A 3D simulation of quantum physics concepts. Users can manipulate particles and observe their behavior in a simulated environment, built with Three.js for rendering and Cannon.js for physics.</p>
+                        <a href="#" class="inline-block text-accent-color hover:underline text-sm">View Project &rarr;</a>
+                    </div>
+                    <!-- Project Card 3 -->
+                    <div class="bg-secondary-bg rounded-xl p-6 shadow-lg digital-border transition-transform transform hover:scale-105">
+                        <h3 class="text-xl font-bold mb-2">Project: Nebula Tracker</h3>
+                        <p class="text-sm text-gray-400 mb-4">A real-time data visualization dashboard for celestial bodies.</p>
+                        <p class="text-sm mb-4">An interactive dashboard that visualizes real-time astronomical data. It features custom charts built with D3.js and a serverless back-end for data processing.</p>
+                        <a href="#" class="inline-block text-accent-color hover:underline text-sm">View Project &rarr;</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact Section -->
+            <section id="contact" class="py-16">
+                <div class="bg-secondary-bg rounded-xl p-8 shadow-lg digital-border">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-6 text-text-color glitch" data-text="Contact">Contact</h2>
+                    <p class="mb-4">
+                        For mission-critical inquiries, project collaborations, or just to say hello, feel free to reach out.
+                    </p>
+                    <div class="space-y-4">
+                        <a href="mailto:johndoe@example.com" class="flex items-center space-x-2 text-accent-color hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                            </svg>
+                            <span>johndoe@example.com</span>
+                        </a>
+                        <a href="https://github.com/johndoe" target="_blank" class="flex items-center space-x-2 text-accent-color hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.808 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.835 2.809 1.305 3.493.999.108-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.046.138 3.006.404 2.291-1.552 3.299-1.23 3.299-1.23.652 1.652.241 2.873.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.8.576 4.765-1.581 8.2-6.087 8.2-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            <span>GitHub</span>
+                        </a>
+                        <a href="https://www.linkedin.com/in/johndoe" target="_blank" class="flex items-center space-x-2 text-accent-color hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.765s.784-1.765 1.75-1.765 1.75.79 1.75 1.765-.783 1.765-1.75 1.765zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                            </svg>
+                            <span>LinkedIn</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center text-sm text-gray-500 mt-16 p-4">
+            <p>Built with ❤️ and code by a human. All rights reserved &copy; 2025</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript for the animated background and password protection -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const canvas = document.getElementById('background-canvas');
+            const ctx = canvas.getContext('2d');
+            const columns = [];
+            const fontSize = 16;
+            let width, height;
+
+            // Password protection logic
+            const correctPassword = "admin"; // Set your password here
+            const loginScreen = document.getElementById('login-screen');
+            const mainContent = document.getElementById('main-content');
+            const passwordInput = document.getElementById('password-input');
+            const submitBtn = document.getElementById('submit-btn');
+            const errorMessage = document.getElementById('error-message');
+
+            function checkPassword() {
+                if (passwordInput.value === correctPassword) {
+                    loginScreen.classList.add('opacity-0');
+                    setTimeout(() => {
+                        loginScreen.classList.add('hidden');
+                        mainContent.classList.remove('hidden');
+                    }, 500);
+                } else {
+                    errorMessage.classList.remove('hidden');
+                    setTimeout(() => {
+                        errorMessage.classList.add('hidden');
+                    }, 2000);
+                }
+            }
+
+            submitBtn.addEventListener('click', checkPassword);
+            passwordInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    checkPassword();
+                }
+            });
+
+            // Update canvas dimensions on window resize
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Re-initialize columns based on new width
+                columns.length = 0;
+                const numColumns = Math.floor(width / fontSize);
+                for (let i = 0; i < numColumns; i++) {
+                    columns[i] = 1;
+                }
+            }
+
+            // Function to generate a random character
+            function getRandomChar() {
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+`-=[]{}|;':\"\\,./<>?~";
+                return chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+
+            // Animation loop
+            function animate() {
+                // Dim the background gradually for the falling effect
+                ctx.fillStyle = "rgba(3, 4, 7, 0.05)";
+                ctx.fillRect(0, 0, width, height);
+
+                // Set font and color for the text
+                ctx.fillStyle = "#00ff41";
+                ctx.font = `${fontSize}px 'Fira Code'`;
+
+                // Draw the characters
+                for (let i = 0; i < columns.length; i++) {
+                    const y = columns[i] * fontSize;
+                    const text = getRandomChar();
+                    ctx.fillText(text, i * fontSize, y);
+
+                    // Send the drop back to the top when it reaches the bottom
+                    if (y > height && Math.random() > 0.975) {
+                        columns[i] = 0;
+                    }
+                    columns[i]++;
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            // Initial setup
+            resizeCanvas();
+            animate();
+
+            // Event listener for window resize
+            window.addEventListener('resize', resizeCanvas);
+        });
+    </script>
+</body>
+</html>
